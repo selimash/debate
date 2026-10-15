@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debate Arena</title>
+<style>
+* { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+body { margin: 0; background: linear-gradient(135deg, #1e293b, #0f172a); color: #f1f5f9; min-height: 100vh; padding: 20px; }
+.app { max-width: 800px; margin: 0 auto; }
+header { text-align: center; margin-bottom: 24px; }
+header h1 { margin: 0; font-size: 2rem; }
+.subtitle { color: #94a3b8; margin-top: 4px; }
+.teams-setup { display: flex; gap: 12px; margin-bottom: 24px; }
+input, select { background: #1e293b; border: 1px solid #334155; color: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 1rem; }
+.teams-setup input { flex: 1; }
+.timer-section { background: #1e293b; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px; }
+.presets { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.presets button { background: #334155; border: none; color: #f1f5f9; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+.presets button:hover { background: #475569; }
+.timer-display { font-size: 4rem; font-weight: bold; margin: 10px 0; font-variant-numeric: tabular-nums; }
+.timer-display.warning { color: #facc15; }
+.timer-display.danger { color: #ef4444; }
+.timer-controls { display: flex; justify-content: center; gap: 12px; }
+.timer-controls button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; }
+#startBtn { background: #22c55e; color: #0f172a; }
+#pauseBtn { background: #facc15; color: #0f172a; }
+#resetBtn { background: #ef4444; color: #f1f5f9; }
+.scoring-section { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.team-score-card { flex: 1; min-width: 260px; background: #1e293b; border-radius: 12px; padding: 16px; }
+.team-score-card h2 { margin-top: 0; text-align: center; }
+.team-score-card label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.95rem; }
+.team-score-card input[type="number"] { width: 60px; text-align: center; }
+.total { text-align: center; font-weight: bold; font-size: 1.2rem; margin-top: 10px; border-top: 1px solid #334155; padding-top: 10px; }
+.winner-section { text-align: center; margin-bottom: 24px; }
+#winnerBtn { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; }
+#winnerResult { margin-top: 14px; font-size: 1.4rem; font-weight: bold; color: #facc15; }
+.notes-section { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
+.notes-input { display: flex; gap: 8px; margin-bottom: 14px; }
+.notes-input input { flex: 1; }
+#addNoteBtn { background: #22c55e; border: none; color: #0f172a; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+#notesList { list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto; }
+#notesList li { background: #0f172a; border-left: 4px solid #3b82f6; padding: 10px; border-radius: 6px; margin-bottom: 8px; }
+#notesList li.teamB { border-left-color: #ef4444; }
+footer { text-align: center; color: #64748b; font-size: 0.85rem; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🎙 Debate Arena</h1>
+    <p class="subtitle">Timer • Scoring • Notes</p>
+  </header>
+
+  <section class="teams-setup">
+    <input id="teamAName" type="text" placeholder="Team A name" value="Team A">
+    <input id="teamBName" type="text" placeholder="Team B name" value="Team B">
+  </section>
+
+  <section class="timer-section">
+    <div class="presets">
+      <button data-time="480">Constructive (8:00)</button>
+      <button data-time="300">Rebuttal (5:00)</button>
+      <button data-time="180">Cross-Ex (3:00)</button>
+    </div>
+    <div id="timerDisplay" class="timer-display">08:00</div>
+    <div class="timer-controls">
+      <button id="startBtn">Start</button>
+      <button id="pauseBtn">Pause</button>
+      <button id="resetBtn">Reset</button>
+    </div>
+  </section>
+
+  <section class="scoring-section">
+    <div class="team-score-card" id="cardA">
+      <h2 id="displayNameA">Team A</h2>
+      <label>Argument Quality <input type="number" min="0" max="10" value="0" class="score" data-team="A" data-cat="argument"></label>
+      <label>Rebuttal <input type="number" min="0" max="10" value="0" class="score" data-team="A" data-cat="rebuttal"></label>
+      <label>Delivery <input type="number" min="0" max="10" value="0" class="score" data-team="A" data-cat="delivery"></label>
+      <div class="total">Total: <span id="totalA">0</span></div>
+    </div>
+
+    <div class="team-score-card" id="cardB">
+      <h2 id="displayNameB">Team B</h2>
+      <label>Argument Quality <input type="number" min="0" max="10" value="0" class="score" data-team="B" data-cat="argument"></label>
+      <label>Rebuttal <input type="number" min="0" max="10" value="0" class="score" data-team="B" data-cat="rebuttal"></label>
+      <label>Delivery <input type="number" min="0" max="10" value="0" class="score" data-team="B" data-cat="delivery"></label>
+      <div class="total">Total: <span id="totalB">0</span></div>
+    </div>
+  </section>
+
+  <section class="winner-section">
+    <button id="winnerBtn">Declare Winner</button>
+    <div id="winnerResult"></div>
+  </section>
+
+  <section class="notes-section">
+    <h2>Debate Notes</h2>
+    <div class="notes-input">
+      <select id="noteSpeaker">
+        <option value="A">Team A</option>
+        <option value="B">Team B</option>
+      </select>
+      <input id="noteText" type="text" placeholder="Type an argument or note...">
+      <button id="addNoteBtn">Add</button>
+    </div>
+    <ul id="notesList"></ul>
+  </section>
+
+  <footer>
+    <p>Built for classroom debate practice</p>
+  </footer>
+</div>
+
+<audio id="beepSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
+<script>
+let timeLeft = 480;
+let timerInterval = null;
+let isRunning = false;
+
+const timerDisplay = document.getElementById('timerDisplay');
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const resetBtn = document.getElementById('resetBtn');
+const beepSound = document.getElementById('beepSound');
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function updateDisplay() {
+  timerDisplay.textContent = formatTime(timeLeft);
+  timerDisplay.classList.remove('warning', 'danger');
+  if (timeLeft <= 10) {
+    timerDisplay.classList.add('danger');
+  } else if (timeLeft <= 30) {
+    timerDisplay.classList.add('warning');
+  }
+}
+
+document.querySelectorAll('.presets button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    isRunning = false;
+    timeLeft = parseInt(btn.dataset.time, 10);
+    updateDisplay();
+  });
+});
+
+startBtn.addEventListener('click', () => {
+  if (isRunning) return;
+  isRunning = true;
+  timerInterval = setInterval(() => {
+    if (timeLeft > 0) {
+      timeLeft--;
+      updateDisplay();
+      if (timeLeft === 0) {
+        beepSound.play();
+        clearInterval(timerInterval);
+        isRunning = false;
+      }
+    }
+  }, 1000);
+});
+
+pauseBtn.addEventListener('click', () => {
+  clearInterval(timerInterval);
+  isRunning = false;
+});
+
+resetBtn.addEventListener('click', () => {
+  clearInterval(timerInterval);
+  isRunning = false;
+  timeLeft = 480;
+  updateDisplay();
+});
+
+document.getElementById('teamAName').addEventListener('input', (e) => {
+  document.getElementById('displayNameA').textContent = e.target.value || 'Team A';
+});
+document.getElementById('teamBName').addEventListener('input', (e) => {
+  document.getElementById('displayNameB').textContent = e.target.value || 'Team B';
+});
+
+function calculateTotal(team) {
+  const inputs = document.querySelectorAll(`.score[data-team="${team}"]`);
+  let total = 0;
+  inputs.forEach(input => total += Number(input.value) || 0);
+  document.getElementById(`total${team}`).textContent = total;
+  return total;
+}
+
+document.querySelectorAll('.score').forEach(input => {
+  input.addEventListener('input', (e) => {
+    calculateTotal(e.target.dataset.team);
+  });
+});
+
+document.getElementById('winnerBtn').addEventListener('click', () => {
+  const totalA = calculateTotal('A');
+  const totalB = calculateTotal('B');
+  const nameA = document.getElementById('teamAName').value || 'Team A';
+  const nameB = document.getElementById('teamBName').value || 'Team B';
+  const resultDiv = document.getElementById('winnerResult');
+
+  if (totalA > totalB) {
+    resultDiv.textContent = `🏆 ${nameA} wins! (${totalA} - ${totalB})`;
+  } else if (totalB > totalA) {
+    resultDiv.textContent = `🏆 ${nameB} wins! (${totalB} - ${totalA})`;
+  } else {
+    resultDiv.textContent = `🤝 It's a tie! (${totalA} - ${totalB})`;
+  }
+});
+
+document.getElementById('addNoteBtn').addEventListener('click', () => {
+  const text = document.getElementById('noteText').value.trim();
+  const speaker = document.getElementById('noteSpeaker').value;
+  if (!text) return;
+
+  const nameA = document.getElementById('teamAName').value || 'Team A';
+  const nameB = document.getElementById('teamBName').value || 'Team B';
+  const speakerName = speaker === 'A' ? nameA : nameB;
+
+  const li = document.createElement('li');
+  li.textContent = `${speakerName}: ${text}`;
+  if (speaker === 'B') li.classList.add('teamB');
+  document.getElementById('notesList').appendChild(li);
+
+  document.getElementById('noteText').value = '';
+});
+
+updateDisplay();
+</script>
+</body>
+</html>
